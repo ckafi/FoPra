@@ -5,6 +5,8 @@ object Parser {
   type Token = String
   def tokenize(input:String):List[Token] = input.split("""\s+""").toList
 
+  def getFirst(x:List[(Tree,List[Token])]) = x.filter(_._2 == List())(0)._1
+
   case class ParserMBuilder[A](run: List[Token] => List[(A,List[Token])]) extends ParserM[A]
 
   trait ParserM[A] {
@@ -44,17 +46,9 @@ object Parser {
   }
 
 
-  object LeafParser extends ParserM[Tree] {
-    val run = (list:List[Token]) => list match {
-      case Nil => Nil
-      case x :: xs => List((Leaf(x),xs))
-    }
-  }
-
   sealed abstract class Tree
   case class Leaf(content:String) extends Tree
   case class Branch(label:Symbol, children:List[Tree]) extends Tree
-
 
 
   def fromGrammar(g: Grammar): ParserM[Tree] = {

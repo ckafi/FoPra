@@ -1,7 +1,9 @@
 import Parser._
 import Grammar._
+import org.scalatest._
 
-object Test {
+
+class AESpec extends FlatSpec with Matchers {
 
   /* Example: The grammar for plt/ae
   *
@@ -35,4 +37,13 @@ object Test {
   ))
 
   val p = fromGrammar(ae)
+
+  def get(x:List[(Tree,List[Token])]) = x.filter(_._2 == List())(0)._1
+
+  "The parser" should "should be able to parse single digits" in {
+    get(p.run(tokenize("1"))) should be (
+      Branch('Exp,
+        List(Branch('Num,
+          List(Leaf("1"))))))
+  }
 }
