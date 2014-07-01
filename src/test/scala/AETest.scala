@@ -33,8 +33,7 @@ class AETest extends FlatSpec with Matchers {
     NonTerminal('Parenthesized) -> Sequence("\\(",'Exp,"\\)"),
 
     NonTerminal('Num) -> Terminal("[0-9]+"),
-    NonTerminal('Id) -> Sequence('Char,Star(Alternatives('Char,'Digit))),
-    NonTerminal('Char) -> Terminal("[A-Za-z][A-Za-z0-9_]*"),
+    NonTerminal('Id) -> Terminal("[A-Za-z][A-Za-z0-9_]*"),
 
     NonTerminal('Mul) -> Sequence('Multiplicand, "\\*", 'Multiplicand),
     NonTerminal('Multiplicand) -> Alternatives('Parenthesized, 'Num, 'Id),
@@ -47,15 +46,50 @@ class AETest extends FlatSpec with Matchers {
 
   "The parser" should "parse single digits" in {
     getFirst(p.run(tokenize("1"))) should be (
-      Branch('Exp,
-        List(Branch('Num,
-          List(Leaf("1"))))))
+      Branch('Exp, List(
+        Branch('Num, List(
+          Leaf("1"))))))
   }
 
   it should "parse multiple digits" in {
     getFirst(p.run(tokenize("123"))) should be (
-      Branch('Exp,
-        List(Branch('Num,
-          List(Leaf("123"))))))
+      Branch('Exp, List(
+        Branch('Num, List(
+          Leaf("123"))))))
+  }
+
+  it should "parse alphanumeric characters without leading digit" in {
+    getFirst(p.run(tokenize("abc32Def"))) should be (
+      Branch('Exp, List(
+        Branch('Id, List(
+          Leaf("abc32Def"))))))
+
+    getFirst(p.run(tokenize("1abc"))) should be (
+      List())
+  }
+
+  it should "parse complex expressions" in {
+    getFirst(p.run(tokenize("1 + 2 * ( 3 + 4 )"))) should be (
+      Branch('Exp, List(
+        Branch('Add, List(
+            Branch('Summand, List(
+              Branch('Num,List(Leaf("1"))))),
+            Leaf("+"),
+            Branch('Summand, List(
+              Branch('Mul,List(
+                Branch('Multiplicand,List(
+                  Branch('Num,List(Leaf("2"))))),
+                Leaf("*"),
+                Branch('Multiplicand,List(
+                  Branch('Parenthesized,List(
+                    Leaf("("),
+                    Branch('Exp,List(
+                      Branch('Add,List(
+                        Branch('Summand,List(
+                          Branch('Num,List( Leaf("3"))))),
+                          Leaf("+"),
+                          Branch('Summand,List(
+                            Branch('Num,List(Leaf("4"))))))))),
+                          Leaf(")"))))))))))))))
   }
 }
