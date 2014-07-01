@@ -74,7 +74,7 @@ object Parser {
       case Terminal(s) => ParserMBuilder(
         (list:List[Token]) => list match {
           case Nil => Nil
-          case x :: xs => if(s == x) List((List(Leaf(s)),xs)) else Nil
+          case x :: xs => if(x matches s) List((List(Leaf(x)),xs)) else Nil
         }
       )
 
