@@ -4,11 +4,11 @@ import org.scalatest._
 
 
 class ParserTest extends FlatSpec with Matchers {
-  def get(x:List[(Tree,List[Token])]) = x.filter(_._2 == List()) match {
+  def get(x:Stream[(Tree,Stream[Token])]) = x.filter(_._2 == Stream()) match {
     case Seq() => Seq()
     case r @ _ => r.map(_._1)
   }
-  def getFirst(x:List[(Tree,List[Token])]) = get(x) match {
+  def getFirst(x:Stream[(Tree,Stream[Token])]) = get(x) match {
     case Seq() => Seq()
     case r @ _ => r(0)
   }
@@ -20,14 +20,14 @@ class ParserTest extends FlatSpec with Matchers {
 
     getFirst(p.run(tokenize("on"))) should be (
       Branch('Exp,
-          List(Leaf("on"))))
+          Stream(Leaf("on"))))
 
     getFirst(p.run(tokenize("off"))) should be (
       Branch('Exp,
-          List(Leaf("off"))))
+          Stream(Leaf("off"))))
 
     getFirst(p.run(tokenize("onoff"))) should be (
-      List())
+      Stream())
   }
 
   it should "handle sequences" in {
@@ -37,13 +37,13 @@ class ParserTest extends FlatSpec with Matchers {
 
     getFirst(p.run(tokenize("a b"))) should be (
       Branch('Exp,
-        List(Leaf("a"), Leaf("b"))))
+        Stream(Leaf("a"), Leaf("b"))))
 
     getFirst(p.run(tokenize("a"))) should be (
-      List())
+      Stream())
 
     getFirst(p.run(tokenize("b"))) should be (
-      List())
+      Stream())
   }
 
   it should "handle optional expressions" in {
@@ -53,6 +53,6 @@ class ParserTest extends FlatSpec with Matchers {
 
     getFirst(p.run(tokenize("a b"))) should be (
       Branch('Exp,
-        List(Leaf("a"), Leaf("b"))))
+        Stream(Leaf("a"), Leaf("b"))))
   }
 }

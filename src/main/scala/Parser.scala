@@ -3,16 +3,16 @@ import Grammar._
 object Parser {
 
   type Token = String
-  def tokenize(input:String):List[Token] = input.split("""\s+""").toList
+  def tokenize(input:String):Stream[Token] = Stream.empty ++ input.split("""\s+""")
 
-  case class ParserMBuilder[A](run: List[Token] => List[(A,List[Token])]) extends ParserM[A]
+  case class ParserMBuilder[A](run: Stream[Token] => Stream[(A,Stream[Token])]) extends ParserM[A]
 
   trait ParserM[A] {
-    val run: List[Token] => List[(A,List[Token])]
+    val run: Stream[Token] => Stream[(A,Stream[Token])]
 
     // bind
     def flatMap[B](f: A => ParserM[B]): ParserM[B] = ParserMBuilder(
-      (input: List[Token]) => (for {
+      (input: Stream[Token]) => (for {
           (v,rest) <- (this run input)
       } yield f(v).run(rest)).flatten
     )
@@ -20,13 +20,13 @@ object Parser {
     def map[B](f: A => B): ParserM[B] = flatMap(x => ParserM(f(x)))
 
     def ++(m: ParserM[A]): ParserM[A] = ParserMBuilder(
-      (input: List[Token]) => (this run input) ++ (m run input)
+      (input: Stream[Token]) => (this run input) ++ (m run input)
     )
 
     def +++(m: ParserM[A]): ParserM[A] = ParserMBuilder(
-      (input: List[Token]) => (this ++ m) run input match {
-        case Nil => Nil
-        case x :: xs => List(x)
+      (input: Stream[Token]) => (this ++ m) run input match {
+        case Seq() => Stream.empty
+        case x #:: xs => Stream(x)
       }
     )
   }
@@ -35,18 +35,18 @@ object Parser {
   object ParserM {
     // return
     def apply[A](token: A)  = ParserMBuilder(
-      (input: List[Token]) => List((token,input))
+      (input: Stream[Token]) => Stream((token,input))
     )
 
     def zero[A](): ParserM[A] = ParserMBuilder(
-      (input: List[Token]) => Nil
+      (input: Stream[Token]) => Stream.empty
     )
   }
 
 
   sealed abstract class Tree
   case class Leaf(content:String) extends Tree
-  case class Branch(label:Symbol, children:List[Tree]) extends Tree
+  case class Branch(label:Symbol, children:Stream[Tree]) extends Tree
 
 
   def fromGrammar(g: Grammar): ParserM[Tree] = {
@@ -56,31 +56,31 @@ object Parser {
     } yield Branch(r, t)
 
 
-    def fromRHS(e: Exp):ParserM[List[Tree]] = e match {
+    def fromRHS(e: Exp):ParserM[Stream[Tree]] = e match {
       case NonTerminal(v) => ParserMBuilder(
         ((for {
           m <- fromRule(v)
-        } yield List(m)) run _)
+        } yield Stream(m)) run _)
       )
 
       case Terminal(s) => ParserMBuilder(
-        (list:List[Token]) => list match {
-          case Nil => Nil
-          case x :: xs => if(x matches s) List((List(Leaf(x)),xs)) else Nil
+        (list:Stream[Token]) => list match {
+          case Seq() => Stream.empty
+          case x #:: xs => if(x matches s) Stream((Stream(Leaf(x)),xs)) else Stream.empty
         }
       )
 
       case Alternatives(xs @ _*) => xs.map(fromRHS).reduceLeft(_ ++ _)
 
       case Sequence(xs @ _*) => xs match {
-        case Seq() => ParserM(List())
+        case Seq() => ParserM(Stream())
         case _ => for {
           m1 <- fromRHS(xs.head)
           m2 <- fromRHS(Sequence(xs.tail:_*))
         } yield m1 ++ m2
       }
 
-      case Option(e) => fromRHS(e) ++ ParserM(List())
+      case Option(e) => fromRHS(e) ++ ParserM(Stream())
 
       case Plus(e) => ParserMBuilder(
         ((for {
@@ -89,7 +89,7 @@ object Parser {
           } yield (once ++ rest)) run _)
       )
 
-      case Star(e) => fromRHS(Plus(e)) ++ ParserM(List())
+      case Star(e) => fromRHS(Plus(e)) ++ ParserM(Stream())
     }
 
     fromRule(g.start.v)

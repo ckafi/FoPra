@@ -4,11 +4,11 @@ import org.scalatest._
 
 
 class AETest extends FlatSpec with Matchers {
-  def get(x:List[(Tree,List[Token])]) = x.filter(_._2 == List()) match {
+  def get(x:Stream[(Tree,Stream[Token])]) = x.filter(_._2 == Stream()) match {
     case Seq() => Seq()
     case r @ _ => r.map(_._1)
   }
-  def getFirst(x:List[(Tree,List[Token])]) = get(x) match {
+  def getFirst(x:Stream[(Tree,Stream[Token])]) = get(x) match {
     case Seq() => Seq()
     case r @ _ => r(0)
   }
@@ -46,50 +46,50 @@ class AETest extends FlatSpec with Matchers {
 
   "The parser" should "parse single digits" in {
     getFirst(p.run(tokenize("1"))) should be (
-      Branch('Exp, List(
-        Branch('Num, List(
+      Branch('Exp, Stream(
+        Branch('Num, Stream(
           Leaf("1"))))))
   }
 
   it should "parse multiple digits" in {
     getFirst(p.run(tokenize("123"))) should be (
-      Branch('Exp, List(
-        Branch('Num, List(
+      Branch('Exp, Stream(
+        Branch('Num, Stream(
           Leaf("123"))))))
   }
 
   it should "parse alphanumeric characters without leading digit" in {
     getFirst(p.run(tokenize("abc32Def"))) should be (
-      Branch('Exp, List(
-        Branch('Id, List(
+      Branch('Exp, Stream(
+        Branch('Id, Stream(
           Leaf("abc32Def"))))))
 
     getFirst(p.run(tokenize("1abc"))) should be (
-      List())
+      Stream())
   }
 
   it should "parse complex expressions" in {
     getFirst(p.run(tokenize("1 + 2 * ( 3 + 4 )"))) should be (
-      Branch('Exp, List(
-        Branch('Add, List(
-            Branch('Summand, List(
-              Branch('Num,List(Leaf("1"))))),
+      Branch('Exp, Stream(
+        Branch('Add, Stream(
+            Branch('Summand, Stream(
+              Branch('Num,Stream(Leaf("1"))))),
             Leaf("+"),
-            Branch('Summand, List(
-              Branch('Mul,List(
-                Branch('Multiplicand,List(
-                  Branch('Num,List(Leaf("2"))))),
+            Branch('Summand, Stream(
+              Branch('Mul,Stream(
+                Branch('Multiplicand,Stream(
+                  Branch('Num,Stream(Leaf("2"))))),
                 Leaf("*"),
-                Branch('Multiplicand,List(
-                  Branch('Parenthesized,List(
+                Branch('Multiplicand,Stream(
+                  Branch('Parenthesized,Stream(
                     Leaf("("),
-                    Branch('Exp,List(
-                      Branch('Add,List(
-                        Branch('Summand,List(
-                          Branch('Num,List( Leaf("3"))))),
+                    Branch('Exp,Stream(
+                      Branch('Add,Stream(
+                        Branch('Summand,Stream(
+                          Branch('Num,Stream( Leaf("3"))))),
                           Leaf("+"),
-                          Branch('Summand,List(
-                            Branch('Num,List(Leaf("4"))))))))),
+                          Branch('Summand,Stream(
+                            Branch('Num,Stream(Leaf("4"))))))))),
                           Leaf(")"))))))))))))))
   }
 }
