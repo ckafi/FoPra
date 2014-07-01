@@ -5,8 +5,6 @@ object Parser {
   type Token = String
   def tokenize(input:String):List[Token] = input.split("""\s+""").toList
 
-  def getFirst(x:List[(Tree,List[Token])]) = x.filter(_._2 == List())(0)._1
-
   case class ParserMBuilder[A](run: List[Token] => List[(A,List[Token])]) extends ParserM[A]
 
   trait ParserM[A] {
